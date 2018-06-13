@@ -1,0 +1,7 @@
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/JSONRPCServiceBindingProvider.java
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/JavaToSmd.java
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/JSONRPCReferenceBindingProvider.java
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/JSONRPCBindingInvoker.java
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/JSONRPCBindingProviderFactory.java
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/JSONRPCServiceServlet.java
+/home/jyb/workspace/common/scallop/modules/binding-jsonrpc-runtime/src/main/java/org/apache/tuscany/sca/binding/jsonrpc/provider/ScaDomainScriptServlet.java
