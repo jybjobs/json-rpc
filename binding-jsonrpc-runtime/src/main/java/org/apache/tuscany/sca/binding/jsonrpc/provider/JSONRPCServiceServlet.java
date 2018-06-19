@@ -25,6 +25,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
 import javax.servlet.ServletConfig;
@@ -32,9 +34,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.metaparadigm.jsonrpc.JSONSerializer;
+import org.apache.commons.lang.StringUtils;
 import org.apache.tuscany.sca.assembly.Binding;
+import org.apache.tuscany.sca.binding.jsonrpc.utils.JacksonUtils;
+import org.apache.tuscany.sca.binding.jsonrpc.utils.ObjectUtils;
+import org.apache.tuscany.sca.databinding.XMLTypeHelper;
+import org.apache.tuscany.sca.databinding.json.JSON2JavaBean;
+import org.apache.tuscany.sca.interfacedef.DataType;
 import org.apache.tuscany.sca.interfacedef.InterfaceContract;
 import org.apache.tuscany.sca.interfacedef.Operation;
+import org.apache.tuscany.sca.interfacedef.impl.DataTypeImpl;
+import org.apache.tuscany.sca.interfacedef.util.ElementInfo;
+import org.apache.tuscany.sca.interfacedef.util.WrapperInfo;
+import org.apache.tuscany.sca.interfacedef.util.XMLType;
 import org.apache.tuscany.sca.runtime.RuntimeComponentService;
 import org.apache.tuscany.sca.runtime.RuntimeWire;
 import org.json.JSONArray;
@@ -222,6 +237,7 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                 JSONArray array = jsonReq.getJSONArray("params");
                 args = new Object[array.length()];
                 for (int i = 0; i < args.length; i++) {
+                 //   JSONSerializer.
                     args[i] = array.get(i);
                 }
             }
@@ -235,7 +251,43 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
         RuntimeWire wire = componentService.getRuntimeWire(binding, serviceContract);
         Operation jsonOperation = findOperation(method);
         Object result = null;
-      
+        // jsonType to javaBean
+        List<DataType> wi = jsonOperation.getInputType().getLogical();
+       for(int i =0;i<wi.size();i++){
+           DataType dt = wi.get(i);
+           if(((XMLType) dt.getLogical()).getTypeName() == null){
+               Class<?> paramType = dt.getPhysical();//获取param类型
+               ObjectMapper mapper = new ObjectMapper();
+               mapper.configure(SerializationFeature.WRITE_ENUMS_USING_INDEX,true);
+//               //枚举使用 java反序列化
+               if(args[i] != null && Enum.class.isAssignableFrom(paramType)){
+                   String arg = null;
+                   if(!(args[i] instanceof JSONObject)) {
+                       if(!(args[i] instanceof String)){
+                          arg = String.valueOf(args[i]);
+                       }else {
+                           arg= (String)args[i];
+                       }
+                       Object o = mapper.readValue(arg, paramType);
+                       //通过反射重写ｔostring ,然后转为ＪsonＯbject 加入到ａｒｇｓ
+                       JSONObject m = ObjectUtils.toJsonObject(o);
+                       args[i] = m;
+                   }else{
+                       // add  name to jsonobject
+                    //暂时不做处理
+                   }
+               }
+
+
+//              Object a =  JacksonUtils.deserialize(args[i].toString(), paramType);
+
+           }
+
+       }
+
+
+
+
         try {
         	JSONObject jsonResponse = new JSONObject();
         	result = wire.invoke(jsonOperation, args);
@@ -271,7 +323,7 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
         List<Operation> operations = serviceContract.getInterface().getOperations();
             //componentService.getBindingProvider(binding).getBindingInterfaceContract().getInterface().getOperations();
 
-        
+
         Operation result = null;
         for (Operation o : operations) {
             if (o.getName().equalsIgnoreCase(method)) {

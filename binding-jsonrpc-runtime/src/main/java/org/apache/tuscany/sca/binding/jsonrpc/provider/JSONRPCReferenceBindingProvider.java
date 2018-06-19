@@ -22,10 +22,15 @@ package org.apache.tuscany.sca.binding.jsonrpc.provider;
 import org.apache.tuscany.sca.binding.jsonrpc.JSONRPCBinding;
 import org.apache.tuscany.sca.interfacedef.InterfaceContract;
 import org.apache.tuscany.sca.interfacedef.Operation;
+import org.apache.tuscany.sca.interfacedef.java.JavaInterface;
+import org.apache.tuscany.sca.interfacedef.java.impl.JavaInterfaceUtil;
 import org.apache.tuscany.sca.invocation.Invoker;
 import org.apache.tuscany.sca.provider.ReferenceBindingProvider;
 import org.apache.tuscany.sca.runtime.RuntimeComponent;
 import org.apache.tuscany.sca.runtime.RuntimeComponentReference;
+import org.osoa.sca.ServiceRuntimeException;
+
+import java.lang.reflect.Method;
 
 /**
  * Implementation of the JSONRPC Binding Provider for References
@@ -53,11 +58,18 @@ public class JSONRPCReferenceBindingProvider implements ReferenceBindingProvider
 //        return new JSONRPCBindingInvoker(operation, binding.getURI());
 //    }
     public Invoker createInvoker(Operation operation) {
-//name isAlive
-        if (binding.getRegistryName() != null && binding.getRegistryName().trim().length() > 0 ) {
-            return new JSONRPCReferenceZKInvoker(operation, binding.getURI(), binding.getServiceName(), binding.getRegistryName());
-        }else{
-            return new JSONRPCBindingInvoker(operation, binding.getURI());
+        try {
+            Class<?> iface = ((JavaInterface) reference.getInterfaceContract().getInterface()).getJavaClass();
+            Method remoteMethod = JavaInterfaceUtil.findMethod(iface, operation);
+            //name isAlive
+            if (binding.getRegistryName() != null && binding.getRegistryName().trim().length() > 0 ) {
+                return new JSONRPCReferenceZKInvoker(operation, binding.getURI(), binding.getServiceName(),
+                        binding.getRegistryName(),remoteMethod);
+            }else{
+                return new JSONRPCBindingInvoker(operation, binding.getURI());
+            }
+        } catch (NoSuchMethodException e) {
+            throw new ServiceRuntimeException(operation.toString(), e);
         }
     }
 
