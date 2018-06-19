@@ -219,10 +219,11 @@ public class BeanSerializer extends AbstractSerializer
 			}
 	    }else{//处理没有提供setter 问题，但违反开闭原则，存在安全隐患
 			try {
-				Field[] fields = clazz.getDeclaredFields();
-				while(clazz.getSuperclass() != null){
-					fields = (Field[]) ArrayUtils.addAll(clazz.getSuperclass().getDeclaredFields() ,fields);
-					clazz = clazz.getSuperclass();
+				Class cz = clazz;
+				Field[] fields = cz.getDeclaredFields();
+				while(cz.getSuperclass() != null){
+					fields = (Field[]) ArrayUtils.addAll(cz.getSuperclass().getDeclaredFields() ,fields);
+					cz = cz.getSuperclass();
 				}
 				for (Field ff : fields) {
 					ff.setAccessible(true);//取消权限

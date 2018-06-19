@@ -88,12 +88,17 @@
             <scope>test</scope>
         </dependency>        
         
+        <!--<dependency>-->
+            <!--<groupId>com.metaparadigm</groupId>-->
+            <!--<artifactId>json-rpc</artifactId>-->
+            <!--<version>1.0</version>-->
+        <!--</dependency>-->
         <dependency>
-            <groupId>com.metaparadigm</groupId>
-            <artifactId>json-rpc</artifactId>
-            <version>1.0</version>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+            <version>2.5</version>
+            <!--<scope>test</scope>-->
         </dependency>
-        
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
@@ -156,6 +161,11 @@
             <groupId>scallop</groupId>
             <artifactId>scallop-name-service</artifactId>
             <version>1.4.4</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.4</version>
         </dependency>
 
     </dependencies>

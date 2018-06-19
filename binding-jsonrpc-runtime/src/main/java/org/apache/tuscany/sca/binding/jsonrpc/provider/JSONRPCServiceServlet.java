@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
@@ -274,7 +275,11 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                        args[i] = m;
                    }else{
                        // add  name to jsonobject
-                    //暂时不做处理
+                       JSONObject jsonObject = (JSONObject) args[i];
+                       if(jsonObject != null && jsonObject.length()>0 && !jsonObject.has("name") ){
+                           args[i] = ObjectUtils.addEnumName(paramType,jsonObject);
+                       }
+
                    }
                }
 
