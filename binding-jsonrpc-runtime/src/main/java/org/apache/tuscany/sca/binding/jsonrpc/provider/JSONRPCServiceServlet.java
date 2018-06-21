@@ -27,7 +27,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import javax.servlet.ServletConfig;
@@ -147,7 +149,7 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
         JSONObject jsonReq = null;
         String method = null;
         try {
-            jsonReq = new JSONObject(data.toString());
+                jsonReq = new JSONObject(data.toString());
             method = jsonReq.getString("method");
         } catch (Exception e) {
             //FIXME Exceptions are not handled correctly here
@@ -261,7 +263,8 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                ObjectMapper mapper = new ObjectMapper();
                mapper.configure(SerializationFeature.WRITE_ENUMS_USING_INDEX,true);
 //               //枚举使用 java反序列化
-               if(args[i] != null && Enum.class.isAssignableFrom(paramType)){
+               if(args[i]==null) continue;
+               if(Enum.class.isAssignableFrom(paramType)){
                    String arg = null;
                    if(!(args[i] instanceof JSONObject)) {
                        if(!(args[i] instanceof String)){
@@ -270,7 +273,7 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                            arg= (String)args[i];
                        }
                        Object o = mapper.readValue(arg, paramType);
-                       //通过反射重写ｔostring ,然后转为ＪsonＯbject 加入到ａｒｇｓ
+                       //通过反射重写ｔostring ,然后转为ＪsonＯbject 加入到args
                        JSONObject m = ObjectUtils.toJsonObject(o);
                        args[i] = m;
                    }else{
@@ -281,8 +284,24 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                        }
 
                    }
+               }else if(args[i] instanceof  JSONObject){//jsonObject 中重写List Map Set
+                   JSONObject jsonObject = (JSONObject)args[i];
+//                   Iterator it = jsonObject.keys();
+//                   boolean boo = false;
+//                   while (it.hasNext()) {//判断是否需要重写
+//                       String o = (String) it.next();
+//                       Object value = jsonObject.get(o);
+//                       if (value == null) continue;
+//                       if (value instanceof JSONArray) {
+//                           boo = true;
+//                           break;
+//                       }
+//                   }
+//                   if(boo){
+                       jsonObject = ObjectUtils.addObjectType(paramType,jsonObject);
+                       if(jsonObject != null) args[i]=jsonObject;
+//                   }
                }
-
 
 //              Object a =  JacksonUtils.deserialize(args[i].toString(), paramType);
 
@@ -316,7 +335,6 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
 
     /**
      * Find the operation from the component service contract
-     * @param componentService
      * @param method
      * @return
      */
