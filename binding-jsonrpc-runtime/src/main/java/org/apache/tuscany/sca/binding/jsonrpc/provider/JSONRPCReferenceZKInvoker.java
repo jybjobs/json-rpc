@@ -1,26 +1,28 @@
 
 package org.apache.tuscany.sca.binding.jsonrpc.provider;
 
-import com.googlecode.jsonrpc4j.JsonRpcHttpClient;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import org.apache.tuscany.sca.binding.jsonrpc.utils.JSON2JavaBean;
 import org.apache.tuscany.sca.binding.jsonrpc.utils.JSONRPCClientBuilder;
 import org.apache.tuscany.sca.binding.jsonrpc.utils.NameServiceBuilder;
 import org.apache.tuscany.sca.binding.jsonrpc.utils.PropertiesHelper;
-import org.apache.tuscany.sca.host.http.ServletHost;
 import org.apache.tuscany.sca.interfacedef.Operation;
 import org.apache.tuscany.sca.invocation.Invoker;
 import org.apache.tuscany.sca.invocation.Message;
+import org.json.JSONObject;
 import org.osoa.sca.ServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scallop.nameservice.ns.NameService;
 import scallop.nameservice.ns.NameServiceException;
-import sun.net.www.http.HttpClient;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -42,15 +44,12 @@ public class JSONRPCReferenceZKInvoker implements Invoker {
     private String registryName;
     private String svcName;
     private NameService nameService = NameServiceBuilder.getInstance().getNameService();
-    private Method remoteMethod;
 
-    public JSONRPCReferenceZKInvoker(Operation operation, String uri,String svcName,String registryName
-    ,Method remoteMethod) {
+    public JSONRPCReferenceZKInvoker(Operation operation, String uri,String svcName,String registryName) {
         this.operation = operation;
         this.uri = uri;
         this.svcName = svcName;
         this.registryName = registryName;
-        this.remoteMethod = remoteMethod;
     }
 
 
@@ -90,9 +89,17 @@ public class JSONRPCReferenceZKInvoker implements Invoker {
         try {
             hostPortProxy = hostPortProxy();
             Object[] args = msg.getBody();
+            Class clazz = this.operation.getOutputType().getPhysical();
             Object resp = JSONRPCClientBuilder.post(getURI(hostPortProxy), args, null, operation.getName());
 //            client = new JsonRpcHttpClient(new URL(getURI(hostPortProxy)));
 //            Object resp = invokeTarget(args, hostPortProxy);
+            //对结果进行反序列化
+            ObjectMapper mapper = new ObjectMapper();
+          //  mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+            String jsonStr = mapper.writeValueAsString(resp);
+            JSONObject jsonObject = new JSONObject(jsonStr);
+            JSON2JavaBean ob = new JSON2JavaBean();
+            resp = ob.transform(jsonObject, clazz);
             msg.setBody(resp);
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof ServiceRuntimeException) {
@@ -103,65 +110,13 @@ public class JSONRPCReferenceZKInvoker implements Invoker {
             String srvDetail = getServiceDetail(hostPortProxy);
             logger.error("invoking target error, srvDetail: {}, e: {}", srvDetail, e);
         } catch (Throwable e) {
-            msg.setFaultBody(e);
+
+            msg.setFaultBody(e.getCause());
             String srvDetail = getServiceDetail(hostPortProxy);
             logger.error("invoking target error, srvDetail: {}, e: {}", srvDetail, e);
         }
         return msg;
     }
-//    private Object invokeTarget(final Object payload, String hostPortProxy) throws Throwable {
-//        long startTime = 0L;
-//        if (logger.isInfoEnabled()) {
-//            startTime = System.currentTimeMillis();
-//        }
-//        //proxy = rmiHost.findService(hostAndPort[0], hostAndPort[1], svcName);
-//        String srvDetail = getServiceDetail(hostPortProxy);
-//        if (logger.isInfoEnabled()) {
-//            statMethodExecute(srvDetail, remoteMethod.getName());
-//        }
-//
-//        remoteMethod = this.getClass().getMethod(remoteMethod.getName(), remoteMethod.getParameterTypes());
-//        try {
-//
-//            if (payload != null && !payload.getClass().isArray()) {
-//                Object o = remoteMethod.invoke(client, payload);
-//                if (logger.isInfoEnabled()) {
-//                    long time = System.currentTimeMillis() - startTime;
-//                    if (time > PropertiesHelper.getInstance().getRmiProcessTimeThreshold()) {
-//                        if (PropertiesHelper.getInstance().getRmiShowParameters()) {
-//                            logger.info(new StringBuffer("method process stat: ").append(srvDetail).append(POINT).append(remoteMethod.getName()).append(" time: ").append(" params:").append(payload).append(System.currentTimeMillis() - startTime).append(" ms").toString());
-//                        } else {
-//                            logger.info(new StringBuffer("method process stat: ").append(srvDetail).append(POINT).append(remoteMethod.getName()).append(" time: ").append(System.currentTimeMillis() - startTime).append(" ms").toString());
-//                        }
-//                    }
-//                }
-//                return o;
-//            } else {
-//                Object o = remoteMethod.invoke(client, (Object[]) payload);
-//                if (logger.isInfoEnabled()) {
-//                    long time = System.currentTimeMillis() - startTime;
-//                    if (time > PropertiesHelper.getInstance().getRmiProcessTimeThreshold()) {
-//                        Object[] objs = (Object[]) payload;
-//                        if (PropertiesHelper.getInstance().getRmiShowParameters()) {
-//                            String sb = getParamString(objs);
-//                            logger.info(new StringBuffer("method process stat: ").append(srvDetail).append(POINT).append(remoteMethod.getName()).append(" time: ").append(" params:").append(sb.toString()).append(System.currentTimeMillis() - startTime).append(" ms").toString());
-//                        } else {
-//                            logger.info(new StringBuffer("method process stat: ").append(srvDetail).append(POINT).append(remoteMethod.getName()).append(" time: ").append(System.currentTimeMillis() - startTime).append(" ms").toString());
-//                        }
-//                    }
-//                }
-//                return o;
-//            }
-//        } catch (Exception exp) {
-//            logger.error("invoking target error, srvDetail: {}, e: {}", srvDetail, exp);
-////            proxy = rmiHost.findService(hostAndPort[0], hostAndPort[1], svcName);
-////            if (payload != null && !payload.getClass().isArray()) {
-////                return remoteMethod.invoke(proxy, payload);
-////            } else {
-////                return remoteMethod.invoke(proxy, (Object[]) payload);
-//            throw exp;
-//        }
-//    }
 
     /**
      * 返回proxy的hostPort
@@ -222,22 +177,4 @@ public class JSONRPCReferenceZKInvoker implements Invoker {
             throw new NameServiceException(errMsg);
         }
     }
-//    private static String getParamString(Object[] args) {
-//        StringBuilder sb = new StringBuilder();
-//        if (null != args) {
-//            for (Object arg : args) {
-//                if (arg instanceof TenantParam) {
-//                    TenantParam tenantParam = (TenantParam) arg;
-//                    String tenantIdStr = null;
-//                    if (null != tenantParam.getTenantId()) {
-//                        tenantIdStr = tenantParam.getTenantId().toString();
-//                    }
-//                    sb.append(tenantIdStr).append(", ");
-//                } else {
-//                    sb.append(arg).append(", ");
-//                }
-//            }
-//        }
-//        return sb.toString();
-//    }
 }

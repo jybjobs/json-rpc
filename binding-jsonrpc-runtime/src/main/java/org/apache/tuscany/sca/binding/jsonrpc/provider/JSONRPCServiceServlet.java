@@ -39,7 +39,7 @@ import javax.servlet.http.HttpSession;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.metaparadigm.jsonrpc.JSONSerializer;
+import com.metaparadigm.jsonrpc.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tuscany.sca.assembly.Binding;
 import org.apache.tuscany.sca.binding.jsonrpc.utils.JacksonUtils;
@@ -58,10 +58,6 @@ import org.apache.tuscany.sca.runtime.RuntimeWire;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osoa.sca.ServiceRuntimeException;
-
-import com.metaparadigm.jsonrpc.JSONRPCBridge;
-import com.metaparadigm.jsonrpc.JSONRPCResult;
-import com.metaparadigm.jsonrpc.JSONRPCServlet;
 
 /**
  * Servlet that handles JSON-RPC requests invoking SCA services.
@@ -286,21 +282,8 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                    }
                }else if(args[i] instanceof  JSONObject){//jsonObject 中重写List Map Set
                    JSONObject jsonObject = (JSONObject)args[i];
-//                   Iterator it = jsonObject.keys();
-//                   boolean boo = false;
-//                   while (it.hasNext()) {//判断是否需要重写
-//                       String o = (String) it.next();
-//                       Object value = jsonObject.get(o);
-//                       if (value == null) continue;
-//                       if (value instanceof JSONArray) {
-//                           boo = true;
-//                           break;
-//                       }
-//                   }
-//                   if(boo){
-                       jsonObject = ObjectUtils.addObjectType(paramType,jsonObject);
-                       if(jsonObject != null) args[i]=jsonObject;
-//                   }
+                   jsonObject = ObjectUtils.addObjectType(paramType,jsonObject);
+                   if(jsonObject != null) args[i]=jsonObject;
                }
 
 //              Object a =  JacksonUtils.deserialize(args[i].toString(), paramType);
@@ -308,9 +291,6 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
            }
 
        }
-
-
-
 
         try {
         	JSONObject jsonResponse = new JSONObject();
@@ -325,10 +305,11 @@ public class JSONRPCServiceServlet extends JSONRPCServlet {
                 throw new ServiceRuntimeException("Unable to create JSON response", e);
             }
         } catch (InvocationTargetException e) {
-           	 JSONRPCResult errorResult = new JSONRPCResult(JSONRPCResult.CODE_REMOTE_EXCEPTION, id, e.getCause() );
+
+           	 JSONRPCResultN errorResult = new JSONRPCResultN(JSONRPCResultN.CODE_REMOTE_EXCEPTION, id, e.getCause(),e.getTargetException().getClass().getName());
              return errorResult.toString().getBytes("UTF-8");
         } catch(RuntimeException e) {
-             JSONRPCResult errorResult = new JSONRPCResult(JSONRPCResult.CODE_REMOTE_EXCEPTION, id, e.getCause());
+            JSONRPCResultN errorResult = new JSONRPCResultN(JSONRPCResultN.CODE_REMOTE_EXCEPTION, id, e.getCause(),null);
              return errorResult.toString().getBytes("UTF-8");
         }
    }

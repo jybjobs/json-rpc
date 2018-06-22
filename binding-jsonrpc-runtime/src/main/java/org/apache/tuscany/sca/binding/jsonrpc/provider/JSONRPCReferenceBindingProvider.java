@@ -58,18 +58,14 @@ public class JSONRPCReferenceBindingProvider implements ReferenceBindingProvider
 //        return new JSONRPCBindingInvoker(operation, binding.getURI());
 //    }
     public Invoker createInvoker(Operation operation) {
-        try {
-            Class<?> iface = ((JavaInterface) reference.getInterfaceContract().getInterface()).getJavaClass();
-            Method remoteMethod = JavaInterfaceUtil.findMethod(iface, operation);
-            //name isAlive
-            if (binding.getRegistryName() != null && binding.getRegistryName().trim().length() > 0 ) {
-                return new JSONRPCReferenceZKInvoker(operation, binding.getURI(), binding.getServiceName(),
-                        binding.getRegistryName(),remoteMethod);
-            }else{
-                return new JSONRPCBindingInvoker(operation, binding.getURI());
-            }
-        } catch (NoSuchMethodException e) {
-            throw new ServiceRuntimeException(operation.toString(), e);
+        //    Class<?> iface = ((JavaInterface) reference.getInterfaceContract().getInterface()).getJavaClass();
+//            Method remoteMethod = JavaInterfaceUtil.findMethod(iface, operation);
+        //name isAlive
+        if (binding.getRegistryName() != null && binding.getRegistryName().trim().length() > 0 ) {
+            return new JSONRPCReferenceZKInvoker(operation, binding.getURI(), binding.getServiceName(),
+                    binding.getRegistryName());
+        }else{
+            return new JSONRPCBindingInvoker(operation, binding.getURI());
         }
     }
 

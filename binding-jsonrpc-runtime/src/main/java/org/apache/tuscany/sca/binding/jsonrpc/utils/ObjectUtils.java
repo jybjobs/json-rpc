@@ -159,6 +159,7 @@ public class ObjectUtils {
                             if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
                             else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
                             else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
+                            else if(Enum.class.isAssignableFrom(clazz)) j=addEnumName(clazz,(JSONObject)o);
                             else j=addObjectType(clazz,(JSONObject)o);
                             if(j!=null) jsonArray.put(j);
                         }
@@ -204,6 +205,8 @@ public class ObjectUtils {
                         j = addMapType(type,c,(JSONObject) ja);
                     } else if (Set.class.isAssignableFrom(field.getType())) {
                         j = addSetType(type, c,(JSONObject) ja);
+                    }else if (Enum.class.isAssignableFrom(field.getType())) {
+                        j = addEnumName(c,(JSONObject) ja);
                     }else {//javabean
                         j = addObjectType(c, (JSONObject) ja);
                     }
@@ -246,6 +249,7 @@ public class ObjectUtils {
                             if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
                             else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
                             else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
+                            else if(Enum.class.isAssignableFrom(clazz)) j=addEnumName(clazz,(JSONObject)o);
                             else j=addObjectType(clazz,(JSONObject)o);
                             if(j!=null) jo.put(key,j);
                         }
@@ -291,6 +295,7 @@ public class ObjectUtils {
                             if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
                             else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
                             else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
+                            else if(Enum.class.isAssignableFrom(clazz)) j=addEnumName(clazz,(JSONObject)o);
                             else j=addObjectType(clazz,(JSONObject)o);
                             if(j!=null) jo.put(key,j);
                         }
@@ -320,7 +325,6 @@ public class ObjectUtils {
         }
         return null;
     }
-
 
 
     /**

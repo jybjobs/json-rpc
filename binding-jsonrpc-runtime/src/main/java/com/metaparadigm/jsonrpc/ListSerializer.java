@@ -119,8 +119,11 @@ public class ListSerializer extends AbstractSerializer
 	List list = (List)o;
 	JSONObject obj = new JSONObject();
 	JSONArray arr = new JSONArray();
+		String cname = o.getClass().getName();
+		String[] strs = cname.split("\\s+");
+		if(strs.length>1) cname=strs[1];
         if (ser.getMarshallClassHints())
-            obj.put("javaClass", o.getClass().getName());
+            obj.put("javaClass", cname);
 	obj.put("list", arr);
 	int index=0;
 	try {
