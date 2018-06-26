@@ -23,6 +23,7 @@
 package com.metaparadigm.jsonrpc;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.beans.PropertyDescriptor;
 import java.beans.BeanInfo;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.tuscany.sca.binding.jsonrpc.utils.ObjectUtils;
 import org.json.JSONObject;
 import org.objenesis.ObjenesisStd;
 
@@ -179,13 +181,19 @@ public class BeanSerializer extends AbstractSerializer
 	if(ser.isDebug())
 	    log.fine("instantiating " + clazz.getName());
 	Object instance = null;
+
+	boolean isAbs = Modifier.isAbstract(clazz.getModifiers()) ;
 	try {
-		instance = new ObjenesisStd().getInstantiatorOf(clazz).newInstance();
-	   // instance = clazz.newInstance();
+	    instance = clazz.newInstance();
 	} catch (Exception e) {
-	    throw new UnmarshallException
-		("can't instantiate bean " +
-		 clazz.getName() + ": " + e.getMessage());
+		try {
+			if(!isAbs)
+				instance = new ObjenesisStd().getInstantiatorOf(clazz).newInstance();
+		} catch (Exception e1) {
+			throw new UnmarshallException
+					("can't instantiate bean " +
+							clazz.getName() + ": " + e.getMessage());
+		}
 	}
 	//Field[] fields = clazz.getDeclaredFields();
 
@@ -195,7 +203,20 @@ public class BeanSerializer extends AbstractSerializer
 	while(i.hasNext()) {
 	    String field = (String)i.next();
 	    Method setMethod = (Method)bd.writableProps.get(field);
-	    if(setMethod != null) {
+	     try {
+			 if(isAbs)
+			setMethod = clazz.getMethod(field);//抽象类直接通过类反射
+		} catch (NoSuchMethodException e) {
+			 try {
+				 setMethod = clazz.getMethod("set"+ ObjectUtils.upperCase(field));
+			 } catch (NoSuchMethodException e1) {
+				// e1.printStackTrace();
+				 log.info("invoking Abstract method error:getMethod{} " + field +
+						 "(" + e1.getMessage() + ")");
+				 continue;
+			 }
+		 }
+		if(setMethod != null) {
 			try {
 				Class param[] = setMethod.getParameterTypes();
 				fieldVal = ser.unmarshall(state, param[0], jso.get(field));

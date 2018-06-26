@@ -31,7 +31,7 @@ public class JSONRPCResultN {
 
     private Object result = null;
     private Object id = null;
-    private Object exceptionTypeName  = null;
+    private Object exceptionTypeName  = null;//返回自定义异常类名
     private int errorCode;
 
     public final static int CODE_SUCCESS = 0;

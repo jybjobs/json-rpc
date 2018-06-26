@@ -45,7 +45,38 @@ public class ObjectUtils {
        }
         return jo;
     }
-
+    /**
+     *　重写toString方法，
+     * 为枚举类添加name
+     * @param object
+     * @return
+     */
+    public static JSONObject enumToJsonObject(Class clazz,Object object)  {
+      //  Class clazz = object.getClass();
+        if(!isBaseClass(object)) return addEnumName(clazz,(JSONObject) object);
+        JSONObject jo = new JSONObject();
+        Method[] methods = clazz.getDeclaredMethods();
+        try {
+            for (Method method : methods) {
+                String modifier = Modifier.toString(method.getModifiers());
+                if (modifier.contains("public") && method.getName().indexOf("get")>-1) {//public getter method
+                    //         sb.append("\""+method.getName().split("get")[1].toLowerCase()+"\":"+method.invoke(object));
+                    jo.put(method.getName().split("get")[1].toLowerCase(),method.invoke(object));
+                }
+            }
+            if(jo.length()==0){//无ｇｅｔ
+                if(clazz.getSuperclass()==Enum.class) jo.put("name", object);
+            } else if(clazz.getSuperclass()==Enum.class)
+                // sb.append("\"name\":\""+clazz.getSuperclass().getMethod("name").invoke(object)+"\"}");
+                jo.put("name", clazz.getSuperclass().getMethod("name").invoke(object));
+        }catch (Exception e){
+            //@todo  枚举类是内部类没有get set 问题
+            //e.getStackTrace();
+            e.printStackTrace();
+            return null;
+        }
+        return jo;
+    }
     /**
      *  为jsonArray 中对象添加类型说明：
      *  e.g. "trailItemList":{"javaClass":"java.util.ArrayList",
@@ -156,11 +187,12 @@ public class ObjectUtils {
                             JSONObject j;
                             Object o = object.get(i);
                             if (o== null) continue;
-                            if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
-                            else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
-                            else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
-                            else if(Enum.class.isAssignableFrom(clazz)) j=addEnumName(clazz,(JSONObject)o);
-                            else j=addObjectType(clazz,(JSONObject)o);
+//                            if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
+//                            else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
+//                            else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
+//                            else if(Enum.class.isAssignableFrom(clazz)) j=enumToJsonObject(clazz,o);
+//                            else j=addObjectType(clazz,(JSONObject)o);
+                            else j = addTypes(type,clazz,o);
                             if(j!=null) jsonArray.put(j);
                         }
                         jsonObject.put("list", jsonArray);
@@ -176,6 +208,16 @@ public class ObjectUtils {
         return null;
     }
 
+
+    public static JSONObject addTypes(Type type, Class clazz, Object o){
+        JSONObject j ;
+        if(List.class.isAssignableFrom(clazz)) j=ObjectUtils.addListType(type,clazz,(JSONArray) o);
+        else if(Map.class.isAssignableFrom(clazz)) j=ObjectUtils.addMapType(type,clazz,(JSONObject)o);
+        else if(Set.class.isAssignableFrom(clazz)) j=ObjectUtils.addSetType(type,clazz,(JSONObject)o);
+        else if(Enum.class.isAssignableFrom(clazz)) j=ObjectUtils.enumToJsonObject(clazz,o);
+        else j=ObjectUtils.addObjectType(clazz,(JSONObject)o);
+        return j;
+    }
     /**
      * if field type for object
      */
@@ -198,19 +240,25 @@ public class ObjectUtils {
                     continue;
                 if (object.has(name)) {
                     Object ja = object.get(name);
-                    if(ja== null) continue;
-                    if (List.class.isAssignableFrom(field.getType())) {
-                        j = addListType(type,c, (JSONArray)ja);
-                    } else if (Map.class.isAssignableFrom(field.getType())) {
-                        j = addMapType(type,c,(JSONObject) ja);
-                    } else if (Set.class.isAssignableFrom(field.getType())) {
-                        j = addSetType(type, c,(JSONObject) ja);
-                    }else if (Enum.class.isAssignableFrom(field.getType())) {
-                        j = addEnumName(c,(JSONObject) ja);
-                    }else {//javabean
-                        j = addObjectType(c, (JSONObject) ja);
+                    if(ja== JSONObject.NULL) {
+                        object.put(name,null);
+                        continue;
                     }
+                    if(ja== null) continue;
+//                    if (List.class.isAssignableFrom(field.getType())) {
+//                        j = addListType(type,c, (JSONArray)ja);
+//                    } else if (Map.class.isAssignableFrom(field.getType())) {
+//                        j = addMapType(type,c,(JSONObject) ja);
+//                    } else if (Set.class.isAssignableFrom(field.getType())) {
+//                        j = addSetType(type, c,(JSONObject) ja);
+//                    }else if (Enum.class.isAssignableFrom(field.getType())) {
+//                        j = enumToJsonObject(c,ja);
+//                    }else {//javabean
+//                        j = addObjectType(c, (JSONObject) ja);
+//                    }
+                    else j = addTypes(type,c,ja);
                     if(j != null) object.put(name,j);
+                    //else object.put(name,ja);
                 }
             }
         }catch (Exception e){
@@ -246,11 +294,12 @@ public class ObjectUtils {
                             String key = (String) its.next();
                             Object o = object.get(key);
                             if (o== null) continue;
-                            if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
-                            else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
-                            else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
-                            else if(Enum.class.isAssignableFrom(clazz)) j=addEnumName(clazz,(JSONObject)o);
-                            else j=addObjectType(clazz,(JSONObject)o);
+//                            if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
+//                            else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
+//                            else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
+//                            else if(Enum.class.isAssignableFrom(clazz)) j=enumToJsonObject(clazz,o);
+//                            else j=addObjectType(clazz,(JSONObject)o);
+                            else j = addTypes(type,clazz,o);
                             if(j!=null) jo.put(key,j);
                         }
                         jsonObject.put("map", jo);
@@ -292,11 +341,12 @@ public class ObjectUtils {
                             String key = (String) its.next();
                             Object o = object.get(key);
                             if (o== null) continue;
-                            if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
-                            else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
-                            else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
-                            else if(Enum.class.isAssignableFrom(clazz)) j=addEnumName(clazz,(JSONObject)o);
-                            else j=addObjectType(clazz,(JSONObject)o);
+//                            if(List.class.isAssignableFrom(clazz)) j=addListType(type,clazz,(JSONArray) o);
+//                            else if(Map.class.isAssignableFrom(clazz)) j=addMapType(type,clazz,(JSONObject)o);
+//                            else if(Set.class.isAssignableFrom(clazz)) j=addSetType(type,clazz,(JSONObject)o);
+//                            else if(Enum.class.isAssignableFrom(clazz)) j=enumToJsonObject(clazz,o);
+//                            else j=addObjectType(clazz,(JSONObject)o);
+                            else j = addTypes(type,clazz,o);
                             if(j!=null) jo.put(key,j);
                         }
                         jsonObject.put("set", jo);
@@ -359,10 +409,15 @@ public class ObjectUtils {
             if(s.equals(ctype)) return true;
         }
         return false;
-
     }
 
-
+    public  static  boolean isBaseClass(Object ctype){
+        if((ctype instanceof Integer)||(ctype instanceof Integer)||(ctype instanceof String)
+                ||(ctype instanceof Boolean)||(ctype instanceof Double)
+                ||(ctype instanceof Float)||(ctype instanceof Long)||(ctype instanceof Short)||
+                (ctype instanceof Byte)||(ctype instanceof Character)) return  true;
+        return false;
+    }
 
     //
 //    Object newIn(Class<?> clazz) {
@@ -397,8 +452,12 @@ public class ObjectUtils {
 //    }
 
     public static void main(String[] args) {
-        String str = upperCase("type");
-        System.out.println("get"+str);
+//        String str = upperCase("type");
+//        System.out.println("get"+str);
+
+        JSONObject o = null;
+        System.out.println("sss:"+ (o==null));
+        System.out.println("sss:"+JSONObject.NULL.equals("null"));
     }
 
 }
